@@ -5,6 +5,7 @@
 using namespace std;
 
 enum pen_type_enum { brush_pen, pencil_pen, fill_pen, polygon_pen };
+enum brush_size_enum { small = 5, medium = 15, large = 30, xlarge = 45 };
 
 class brush_manager;
 class pencil_manager;
@@ -60,6 +61,17 @@ public:
     void set_size(int idx) {
         if (idx >= 0 && idx < 4) currentindex = idx;
     }
+    brush_manager() {
+        Rectangle brush_btn = { 950, 80, 70, 25};
+        int s[4] = { small, medium, large, xlarge };
+        for (int i = 0; i < 4; i++) {
+            brushsizes[i] = s[i];
+        }
+        for (int i = 0; i < 4; i++) {
+            sizebutton[i] = { 950, 120.0f + (i * 10), 50, 25 };
+        }
+    }
+
 
 };
 
