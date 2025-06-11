@@ -55,12 +55,7 @@ protected:
     Rectangle sizebutton[4];
     int brushsizes[4];
 public:
-    int get_size() {
-        return brushsizes[currentindex];
-    }
-    void set_size(int idx) {
-        if (idx >= 0 && idx < 4) currentindex = idx;
-    }
+    
     brush_manager() {
         Rectangle brush_btn = { 950, 80, 70, 25};
         int s[4] = { small, medium, large, xlarge };
@@ -71,7 +66,12 @@ public:
             sizebutton[i] = { 950, 120.0f + (i * 10), 50, 25 };
         }
     }
-
+    int get_size() {
+        return brushsizes[currentindex];
+    }
+    void set_size(int idx) {
+        if (idx >= 0 && idx < 4) currentindex = idx;
+    }
 
 };
 
@@ -80,7 +80,20 @@ protected:
     Rectangle pencilbutton;
     Rectangle sizebtns[4];
     int pencilsizes[4];
+
 public:
+
+    pencil_manager() {
+        Rectangle pencil_btn = { 950, 250, 50, 25 };
+        int s[4] = { small, medium, large, xlarge };
+        for (int i = 0; i < 4; i++) {
+            pencilsizes[i] = s[i];
+        }
+        for (int i = 0; i < 4; i++) {
+            sizebtns[i] = { 950, 300 + (i * 10), 50, 25 };
+        }
+    }
+
     int get_size() {
         return pencilsizes[currentindex];
     }
