@@ -90,9 +90,33 @@ public:
             pencilsizes[i] = s[i];
         }
         for (int i = 0; i < 4; i++) {
-            sizebtns[i] = { 950, 300 + (i * 10), 50, 25 };
+            sizebtns[i] = { 950, 300.0f + (i * 10), 50, 25 };
         }
     }
+
+    void draw() override {
+        DrawRectangleRec(pencilbutton, (selectedpen == pencil_pen) ? DARKGRAY : LIGHTGRAY);
+        DrawRectangleLinesEx(pencilbutton, 1, BLACK);
+        DrawText("pencil", pencilbutton.x + 1, pencilbutton.y + 1, 19, BLACK);
+        for (int i = 0; i < 4; i++) {
+            bool sel;
+            if (selectedpen == pencil_pen && currentindex == i) {
+                sel = true;
+            }
+            DrawRectangleRec(sizebtns[i], sel ? DARKGRAY : LIGHTGRAY);
+            DrawRectangleLinesEx(sizebtns[i], 1, BLACK);
+            DrawText(size_label(i).c_str(), sizebtns[i].x + 1, sizebtns[i].y + 1, 19, BLACK);
+        }
+    }
+
+    string size_label(int i) {
+        if (i == 0) return "s";
+        if (i == 1) return "m";
+        if (i == 2) return "l";
+        if (i == 3) return "xl";
+        return;
+    }
+
 
     int get_size() {
         return pencilsizes[currentindex];
