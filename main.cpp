@@ -28,6 +28,18 @@ public:
         brushmgr = b;
         pencilmgr = p;
     }
+    brush_manager* getbrushmgr() {
+        return brushmgr;
+    }
+    pencil_manager* getpencilmgr() {
+        return pencilmgr;
+    }
+    int getcurrentind() {
+        return currentindex;
+    }
+    int getselectedpen() {
+        return selectedpen;
+    }
 
     virtual void update(Vector2 mouse) = 0;
     virtual void draw() = 0;
@@ -48,6 +60,7 @@ public:
     void set_size(int idx) {
         if (idx >= 0 && idx < 4) currentindex = idx;
     }
+
 };
 
 class pencil_manager : public writingtools {
@@ -258,4 +271,3 @@ int main() {
     CloseWindow();
     return 0;
 }
-
