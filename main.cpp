@@ -29,6 +29,9 @@ public:
         pencilmgr = p;
     }
 
+    virtual void update(Vector2 mouse) = 0;
+    virtual void draw() = 0;
+
     virtual ~writingtools() {}
 };
 
@@ -73,6 +76,38 @@ private:
     Rectangle decbutton;
     int sides;
     bool active;
+public:
+    polygon_tool() {
+        polybtn = { 950, 470, 70, 20 };
+        incbutton = { 970, 510, 20, 20 };
+        decbutton = { 950, 510, 20, 20 };
+        sides = 3;
+        active = false;
+    }
+    void draw_polygon(Vector2 center, float radius, Color c) {
+        Vector2 points[21];
+        for (int i = 0; i < sides; i++) {
+            float angle = 2 * PI * i / sides - PI / 2;
+            points[i] = { center.x + radius * cosf(angle), center.y + radius * sinf(angle) };
+        }
+        for (int i = 0; i < sides; i++) {
+            DrawLineV(points[i], points[(i + 1) % sides], c);
+        }
+    }
+
+    void draw() {
+        DrawRectangleRec(polybtn, active ? DARKGRAY : LIGHTGRAY);
+        DrawRectangleLinesEx(polybtn, 2, BLACK);
+        DrawText("polygon", polybtn.x + 1, polybtn.y + 1, 19, BLACK);
+        DrawRectangleRec(incbutton, BLACK);
+        DrawRectangleRec(decbutton, BLACK);
+        DrawText("+", incbutton.x + 1, incbutton.y, 19, BLACK);
+        DrawText("-", decbutton.x + 1, decbutton.y, 19, BLACK);
+        DrawText(("n = " + to_string(sides)).c_str(), 975, decbutton.y, 19, BLACK);
+
+    }
+
+
 };
 
 class color_palette {
@@ -91,9 +126,30 @@ public:
         for (int i = 0; i < 23; i++) {
             colors[i] = temp[i];
         }
+
+        for (int i = 0; i < 23; i++) {
+            colorbuttons[i] = { 950.0f, 30.0f + i * 18.0f, 30.0f, 15.0f };
+        }
+
         selectedcolour = 1;
         hoveredcolour = -1;
     }
+
+    void update(Vector2 mouse) {
+        for (int i = 0; i < 23; i++) {
+            if (CheckCollisionPointRec(mouse, colorbuttons[i])) {
+                if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) selectedcolour = i;
+                break;
+            }
+        }
+    }
+    void draw() {
+        for (int i = 0; i < 23; i++) {
+            DrawRectangleRec(colorbuttons[i], colors[i]);
+        }
+        DrawRectangleLinesEx({ colorbuttons[selectedcolour].x, colorbuttons[selectedcolour].y, 35, 19 }, 1, BLACK);
+    }
+
 
     Color get_current_color() {
         return colors[selectedcolour];
@@ -112,7 +168,7 @@ private:
 public:
     canvas(int w, int h) {
         width = w;
-        height = h;mm
+        height = h;
         target = LoadRenderTexture(width, height); //raylib funtion
         BeginTextureMode(target); //raylib function to begin drawing
         ClearBackground(RAYWHITE);
@@ -141,6 +197,10 @@ public:
         UnloadImage(img);
     }
 
+    void unload() { 
+        UnloadRenderTexture(target); 
+    }
+
 };
 
 class button_management {
@@ -148,7 +208,7 @@ public:
     Rectangle save_btn, load_btn, clear_btn, undo_btn, redo_btn;
     bool hover_save, hover_load, hover_clear, hover_undo, hover_redo;
     bool show_saved_msg, show_loaded_msg;
-
+    int save_counter, load_counter;
 
     button_management() {
         save_btn = { 950, 560, 45, 22 };
@@ -157,7 +217,11 @@ public:
         undo_btn = { 1000, 590, 45, 22 };
         redo_btn = { 1050, 590, 45, 22 };
         hover_save = hover_load = hover_clear = hover_undo = hover_redo = false;
+        show_saved_msg = show_loaded_msg = false;
+        save_counter = load_counter = 0;
     }
+
+
 };
 
 
@@ -175,8 +239,23 @@ int main() {
     pencil_mgr.setmanagers(&brush_mgr, &pencil_mgr);
     writingtools* tool_ptrs[2] = { &brush_mgr, &pencil_mgr };
 
+    fill_tool fillmgr;
+    polygon_tool polymgr;
+    color_palette palette;
+    canvas canv(width - 180, height);
+    button_management ui;
+
+
     while (!WindowShouldClose()) { //(KEY_ESCAPE pressed or windows close icon clicked)
+        Vector2 mouse = GetMousePosition();
+        palette.update(mouse);
+
+    
+    
     }
+
+    canv.unload();
     CloseWindow();
+    return 0;
 }
 
