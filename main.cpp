@@ -181,6 +181,12 @@ public :
             fill_selected = true;
         }
     }
+    void draw(bool fill_selected) {
+        DrawRectangleRec(fill_btn, fill_selected ? DARKGRAY : LIGHTGRAY);
+        DrawRectangleLinesEx(fill_btn, 1, BLACK);
+        DrawText("fill", fill_btn.x + 1, fill_btn.y + 1, 19, BLACK);
+    }
+
 };
 
 class polygon_tool {
