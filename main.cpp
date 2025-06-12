@@ -172,6 +172,15 @@ public:
 class fill_tool {
 private:
     Rectangle fill_btn;
+public : 
+    fill_tool() {
+        fill_btn = { 950, 425, 50, 25 };
+    }
+    void update(Vector2 mouse, bool& fill_selected) {
+        if (CheckCollisionPointRec(mouse, fill_btn) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+            fill_selected = true;
+        }
+    }
 };
 
 class polygon_tool {
