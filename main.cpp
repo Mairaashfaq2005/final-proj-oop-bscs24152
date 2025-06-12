@@ -89,6 +89,16 @@ public:
         }
     }
 
+    void update(Vector2 mouse) override {
+        if (CheckCollisionPointRec(mouse, brushbutton) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
+            selectedpen = brush_pen;
+        for (int i = 0; i < 4; i++) {
+            if (CheckCollisionPointRec(mouse, sizebutton[i]) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+                set_size(i);
+            }
+        }
+    }
+
     int get_size() {
         return brushsizes[currentindex];
     }
