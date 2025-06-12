@@ -270,6 +270,7 @@ public:
     void update(Vector2 mouse) {
         for (int i = 0; i < 23; i++) {
             if (CheckCollisionPointRec(mouse, colorbuttons[i])) {
+                hoveredcolour = i; 
                 if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) selectedcolour = i;
                 break;
             }
@@ -278,6 +279,9 @@ public:
     void draw() {
         for (int i = 0; i < 23; i++) {
             DrawRectangleRec(colorbuttons[i], colors[i]);
+        }
+        if (hoveredcolour >= 0) {
+            DrawRectangleRec(colorbuttons[hoveredcolour], Fade(WHITE, 0.5f));
         }
         DrawRectangleLinesEx({ colorbuttons[selectedcolour].x, colorbuttons[selectedcolour].y, 35, 19 }, 1, BLACK);
     }
@@ -329,6 +333,39 @@ public:
         UnloadImage(img);
     }
 
+    void draw_at(Vector2 pos, float radius, Color c, int pen_type) {
+        static Vector2 last_mouse = { -1, -1 };
+        if (pos.x > 940 || pos.y < 20) return; // block drawing over toolbar
+        BeginTextureMode(target);
+        if (pen_type == brush_pen) {
+            DrawCircleV(pos, radius, c);
+        }
+        else if (pen_type == pencil_pen) {
+            if (last_mouse.x >= 0 && last_mouse.y >= 0)
+                DrawLineEx(last_mouse, pos, 1, c);
+        }
+        EndTextureMode();
+        last_mouse = pos;
+    }
+    void render() {
+        DrawTextureRec(target.texture, { 0, 0, (float)target.texture.width, -(float)target.texture.height }, { 0, 0 }, WHITE);
+    }
+    void undo() {
+        if (stateindex > 0) {
+            stateindex--;
+            BeginTextureMode(target);
+            DrawTexture(LoadTextureFromImage(states[stateindex]), 0, 0, WHITE);
+            EndTextureMode();
+        }
+    }
+    void redo() {
+        if (stateindex < statecount - 1) {
+            stateindex++;
+            BeginTextureMode(target);
+            DrawTexture(LoadTextureFromImage(states[stateindex]), 0, 0, WHITE);
+            EndTextureMode();
+        }
+    }
     void unload() { 
         UnloadRenderTexture(target); 
     }
