@@ -44,6 +44,13 @@ public:
 
     virtual void update(Vector2 mouse) = 0;
     virtual void draw() = 0;
+    virtual string size_label(int i) {
+        if (i == 0) return "s";
+        if (i == 1) return "m";
+        if (i == 2) return "l";
+        if (i == 3) return "xl";
+        return;
+    }
 
     virtual ~writingtools() {}
 };
@@ -66,6 +73,22 @@ public:
             sizebutton[i] = { 950, 120.0f + (i * 10), 50, 25 };
         }
     }
+
+    void draw() override {
+        DrawRectangleRec(brushbutton, (selectedpen == brush_pen) ? DARKGRAY : LIGHTGRAY);
+        DrawRectangleLinesEx(brushbutton, 1, BLACK);
+        DrawText("brush", brushbutton.x + 1, brushbutton.y + 1, 19, BLACK);
+        for (int i = 0; i < 4; i++) {
+            bool sel = false;
+            if (selectedpen == brush_pen && currentindex == i) {
+                sel = true;
+            }
+            DrawRectangleRec(sizebutton[i], sel ? DARKGRAY : LIGHTGRAY);
+            DrawRectangleLinesEx(sizebutton[i], 1, BLACK);
+            DrawText(size_label(i).c_str(), sizebutton[i].x + 1, sizebutton[i].y + 1, 19, BLACK);
+        }
+    }
+
     int get_size() {
         return brushsizes[currentindex];
     }
@@ -109,13 +132,13 @@ public:
         }
     }
 
-    string size_label(int i) {
-        if (i == 0) return "s";
-        if (i == 1) return "m";
-        if (i == 2) return "l";
-        if (i == 3) return "xl";
-        return;
-    }
+    //string size_label(int i) {
+    //    if (i == 0) return "s";
+    //    if (i == 1) return "m";
+    //    if (i == 2) return "l";
+    //    if (i == 3) return "xl";
+    //    return;
+    //}
 
 
     int get_size() {
