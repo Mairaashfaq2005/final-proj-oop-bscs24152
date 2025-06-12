@@ -142,6 +142,16 @@ public:
         }
     }
 
+    void update(Vector2 mouse) override {
+        if (CheckCollisionPointRec(mouse, pencilbutton) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
+            selectedpen = pencil_pen;
+        for (int i = 0; i < 4; i++) {
+            if (CheckCollisionPointRec(mouse, sizebtns[i]) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+                set_size(i);
+            }
+        }
+    }
+
     //string size_label(int i) {
     //    if (i == 0) return "s";
     //    if (i == 1) return "m";
