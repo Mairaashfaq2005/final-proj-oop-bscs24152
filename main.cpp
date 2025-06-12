@@ -227,6 +227,18 @@ public:
 
     }
 
+    void update(Vector2 mouse) {
+        if (CheckCollisionPointRec(mouse, polybtn) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+            active = true;
+        }
+        if (CheckCollisionPointRec(mouse, incbutton) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
+            if (sides < 20) sides++;
+        if (CheckCollisionPointRec(mouse, decbutton) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
+            if (sides > 3) sides--;
+    }
+
+
+
 
 };
 
