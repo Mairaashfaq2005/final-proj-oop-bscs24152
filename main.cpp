@@ -233,6 +233,26 @@ public :
         DrawText("fill", fill_btn.x + 1, fill_btn.y + 1, 19, BLACK);
     }
 
+    template<typename T>
+    void flood_fill(Image& img, int x, int y, T target, T replacement) {
+        if (x < 0 || x >= img.width || y < 0 || y >= img.height) { // boundary chk
+            return;
+        }
+        Color* pixels = (Color*)img.data;
+        T* p = (T*)img.data;
+        if (p[y * img.width + x] == replacement) {
+            return;
+        }
+        if (p[y * img.width + x] != target) {
+            return;
+        }
+        p[y * img.width + x] = replacement;
+        flood_fill(img, x + 1, y, target, replacement);
+        flood_fill(img, x - 1, y, target, replacement);
+        flood_fill(img, x, y + 1, target, replacement);
+        flood_fill(img, x, y - 1, target, replacement);
+    }
+
 };
 
 class polygon_tool {
@@ -478,6 +498,46 @@ public:
         UnloadImage(img);
         log_action("Canvas state loaded from: " + file);
     }
+
+
+    void fill(Vector2 pos, RenderTexture2D target, Color replacement) {
+        Image img = LoadImageFromTexture(target.texture);
+        int x = (int)pos.x, y = (int)pos.y;
+        if (x < 0 || x >= width || y < 0 || y >= height) return;
+        Color* pixels = (Color*)img.data;
+        Color orig = pixels[y * img.width + x];
+        if (ColorToInt(orig) == ColorToInt(replacement)) {
+            UnloadImage(img);
+            return;
+        }
+        int n = 0;
+        do {
+            n = 0;
+            for (int i = 0; i < img.width * img.height; i++) {
+                if (ColorToInt(pixels[i]) == ColorToInt(orig)) {
+                    if (i > 0 && ColorToInt(pixels[i - 1]) == ColorToInt(replacement)) {
+                        pixels[i] = replacement; n++;
+                    }
+                    if (i < img.width * img.height - 1 && ColorToInt(pixels[i + 1]) == ColorToInt(replacement)) {
+                        pixels[i] = replacement; n++; 
+                    }
+                    if (i >= img.width && ColorToInt(pixels[i - img.width]) == ColorToInt(replacement)) { 
+                        pixels[i] = replacement; n++; 
+                    }
+                    if (i < img.width * (img.height - 1) && ColorToInt(pixels[i + img.width]) == ColorToInt(replacement)) { 
+                        pixels[i] = replacement; n++; 
+                    }
+                }
+            }
+        } while (n > 0);
+        Texture2D newtex = LoadTextureFromImage(img);
+        BeginTextureMode(target);
+        DrawTexture(newtex, 0, 0, WHITE);
+        EndTextureMode();
+        UnloadTexture(newtex);
+        UnloadImage(img);
+    }
+
 };
 
 class button_management {
@@ -579,6 +639,9 @@ int main() {
     bool polygon_selected = false;
     int current_tool = 0;
 
+    Vector2 poly_center = { 0, 0 };
+    float poly_radius = 50;
+
     while (!WindowShouldClose()) { //(KEY_ESCAPE pressed or windows close icon clicked)
         Vector2 mouse = GetMousePosition();
         palette.update(mouse);
@@ -597,8 +660,70 @@ int main() {
         polymgr.update(mouse);
         polygon_selected = polymgr.getstatus();
         ui.update(mouse, canv);
-    }
 
+        if (IsMouseButtonDown(MOUSE_LEFT_BUTTON) && mouse.x < 940 && mouse.y < 690) {
+            if (fill_selected) {
+                canv.push_state();
+                Image img = LoadImageFromTexture(canv.gettarget().texture);
+                Color clicked = GetImageColor(img, (int)mouse.x, (int)mouse.y);
+                canv.fill(mouse, canv.gettarget(), palette.get_current_color());
+                UnloadImage(img);
+                fill_selected = false;
+            }
+            else if (polygon_selected) {
+                canv.push_state();
+                poly_center = mouse;
+                canv.draw_polygon(poly_center, poly_radius, polymgr.getsides(), palette.get_current_color());
+                polymgr.setstatus(false);
+            }
+            else {
+                canv.push_state();
+                Color draw_color = palette.get_current_color();
+                float size;
+                if (pen_type == brush_pen) {
+                    size = brush_mgr.get_size();
+                }
+                else if (pen_type == pencil_pen) {
+                    size = pencil_mgr.get_size();
+                }
+                canv.draw_at(mouse, size, draw_color, pen_type);
+            }
+        }
+        if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) canv.reset_last_mouse();
+
+        BeginDrawing();
+        ClearBackground(RAYWHITE);
+
+        canv.render();
+
+        // Preview
+        if (mouse.x < 940 && mouse.y < 690) {
+            float preview_size = (pen_type == brush_pen) ? brush_mgr.get_size() : pencil_mgr.get_size();
+            if (polygon_selected)
+                polymgr.draw_polygon(mouse, poly_radius, palette.get_current_color());
+            else if (pen_type == pencil_pen)
+                DrawCircle(mouse.x, mouse.y, 2, Fade(palette.get_current_color(), 0.5f));
+            else
+                DrawCircleV(mouse, preview_size, Fade(palette.get_current_color(), 0.5f));
+        }
+        // Draw toolbar
+        DrawRectangle(940, 0, 160, height, Fade(LIGHTGRAY, 0.2f));
+        palette.draw();
+        brush_mgr.draw();
+        pencil_mgr.draw();
+        fillmgr.draw(fill_selected);
+        polymgr.draw();
+        ui.draw();
+
+        // Status
+        DrawText(("size: " + to_string((pen_type == brush_pen) ? brush_mgr.get_size() : pencil_mgr.get_size())).c_str(), 950, 640, 15, DARKGRAY);
+        DrawText(("mode: " + string(
+            fill_selected ? "fill" : (polygon_selected ? "polygon" : ((pen_type == pencil_pen) ? "pencil" : "brush"))
+        )).c_str(), 950, 660, 15, DARKGRAY);
+
+        EndDrawing();
+
+    }
     canv.unload();
     CloseWindow();
     return 0;
