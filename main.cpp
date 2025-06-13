@@ -462,6 +462,22 @@ public:
         temp.draw_polygon(center, radius, c);
         EndTextureMode();
     }
+
+    void save_state(const string& file) {
+        Image img = LoadImageFromTexture(target.texture);
+        safe_write<char>(file, static_cast<char*>(img.data), img.width * img.height * 4);
+        UnloadImage(img);
+        log_action("Canvas state saved to: " + file);
+    }
+    void load_state(const string& file) {
+        Image img = GenImageColor(width, height, RAYWHITE);
+        safe_read<char>(file, static_cast<char*>(img.data), width * height * 4);
+        BeginTextureMode(target);
+        DrawTexture(LoadTextureFromImage(img), 0, 0, WHITE);
+        EndTextureMode();
+        UnloadImage(img);
+        log_action("Canvas state loaded from: " + file);
+    }
 };
 
 class button_management {
