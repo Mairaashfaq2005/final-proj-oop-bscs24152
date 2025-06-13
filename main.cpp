@@ -3,6 +3,7 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <ctime>
 using namespace std;
 
 
@@ -176,7 +177,7 @@ public:
         DrawRectangleLinesEx(pencilbutton, 1, BLACK);
         DrawText("pencil", pencilbutton.x + 1, pencilbutton.y + 1, 19, BLACK);
         for (int i = 0; i < 4; i++) {
-            bool sel;
+            bool sel = false;
             if (selectedpen == pencil_pen && currentindex == i) {
                 sel = true;
             }
@@ -397,17 +398,20 @@ public:
     }
 
     void push_state() {
-        Image img = LoadImageFromTexture(target.texture);
-        if (statecount < maxstates) {
-            states[statecount++] = ImageCopy(img);
-            stateindex = statecount - 1;
+        if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+            Image img = LoadImageFromTexture(target.texture);
+            if (statecount < maxstates) {
+                states[statecount++] = ImageCopy(img);
+                stateindex = statecount - 1;
+            }
+            else {
+                for (int i = 1; i < maxstates; i++) states[i - 1] = states[i];
+                states[maxstates - 1] = ImageCopy(img);
+                stateindex = maxstates - 1;
+            }
+            UnloadImage(img);
+            log_action("State pushed");
         }
-        else {
-            for (int i = 1; i < maxstates; i++) states[i - 1] = states[i];
-            states[maxstates - 1] = ImageCopy(img);
-            stateindex = maxstates - 1;
-        }
-        UnloadImage(img);
     }
 
     void draw_at(Vector2 pos, float radius, Color c, int pen_type) {
@@ -433,7 +437,7 @@ public:
             BeginTextureMode(target);
             DrawTexture(LoadTextureFromImage(states[stateindex]), 0, 0, WHITE);
             EndTextureMode();
-            log_action("Undo");
+            log_action("Undo"); 
         }
     }
     void redo() {
@@ -442,18 +446,22 @@ public:
             BeginTextureMode(target);
             DrawTexture(LoadTextureFromImage(states[stateindex]), 0, 0, WHITE);
             EndTextureMode();
-            log_action("Redo");
+            log_action("Redo"); 
         }
     }
-    void unload() { 
-        UnloadRenderTexture(target); 
-    }
 
+    void unload() {
+        for (int i = 0; i < statecount; i++) {
+            if (states[i].data) UnloadImage(states[i]);
+        }
+        UnloadRenderTexture(target);
+    }
 
     void save_image(const string& filename) {
         Image img = LoadImageFromTexture(target.texture);
         ExportImage(img, filename.c_str());
         UnloadImage(img);
+        log_action("Image saved: " + filename);
     }
     void load_image(const string& filename) {
         Image img = LoadImage(filename.c_str());
@@ -462,6 +470,7 @@ public:
             DrawTexture(LoadTextureFromImage(img), 0, 0, WHITE); 
             EndTextureMode();
             UnloadImage(img);
+            log_action("Image loaded: " + filename);
         }
     }
 
@@ -474,12 +483,16 @@ public:
         return target;
     }
 
-
     void draw_polygon(Vector2 center, float radius, int sides, Color c) {
         BeginTextureMode(target);
-        polygon_tool temp;
-        temp.setsides(sides);
-        temp.draw_polygon(center, radius, c);
+        Vector2 points[21];
+        for (int i = 0; i < sides; i++) {
+            float angle = 2.0f * PI * i / sides - PI / 2.0f;
+            points[i] = { center.x + radius * cosf(angle), center.y + radius * sinf(angle) };
+        }
+        for (int i = 0; i < sides; i++) {
+            DrawLineV(points[i], points[(i + 1) % sides], c);
+        }
         EndTextureMode();
     }
 
@@ -569,12 +582,12 @@ public :
         if ((hover_save && IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) || IsKeyPressed(KEY_S)) {
             can.save_image("pic.png");
             show_saved_msg = true;
-            save_counter++;
+            save_counter=0;
         }
         if ((hover_load && IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) || IsKeyPressed(KEY_L)) {
             can.load_image("pic.png");
             show_loaded_msg = true;
-            load_counter++;
+            load_counter=0;
         }
         if ((hover_clear && IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) || IsKeyPressed(KEY_C)) {
             can.clear();
@@ -585,8 +598,8 @@ public :
         if ((hover_redo && IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) || IsKeyPressed(KEY_R)) {
             can.redo();
         }
-        if (show_saved_msg && save_counter > 100) show_saved_msg = false;
-        if (show_loaded_msg && load_counter > 100) show_loaded_msg = false;
+        if (show_saved_msg && save_counter++ > 100) show_saved_msg = false;
+        if (show_loaded_msg && load_counter++ > 100) show_loaded_msg = false;
     }
 
     void draw() {
@@ -661,6 +674,10 @@ int main() {
         polygon_selected = polymgr.getstatus();
         ui.update(mouse, canv);
 
+        if (fill_selected || polygon_selected) {
+            canv.reset_last_mouse();
+        }
+
         if (IsMouseButtonDown(MOUSE_LEFT_BUTTON) && mouse.x < 940 && mouse.y < 690) {
             if (fill_selected) {
                 canv.push_state();
@@ -720,6 +737,7 @@ int main() {
         DrawText(("mode: " + string(
             fill_selected ? "fill" : (polygon_selected ? "polygon" : ((pen_type == pencil_pen) ? "pencil" : "brush"))
         )).c_str(), 950, 660, 15, DARKGRAY);
+        DrawText("Shortcuts: S-save | L-load | C-clear | U-undo | R-redo", 10, 670, 15, BLACK);
 
         EndDrawing();
 
