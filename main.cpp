@@ -117,10 +117,10 @@ protected:
 public:
 
     pencil_manager() {
-        Rectangle pencil_btn = { 950, 250, 50, 25 };
+        pencilbutton = { 950, 250, 50, 25 };
         int s[4] = { small, medium, large, xlarge };
         for (int i = 0; i < 4; i++) {
-            pencilsizes[i] = s[i];
+            pencilsizes[i] = s[i] - ((i + 1) * 4);;
         }
         for (int i = 0; i < 4; i++) {
             sizebtns[i] = { 950, 300.0f + (i * 10), 50, 25 };
@@ -237,8 +237,18 @@ public:
             if (sides > 3) sides--;
     }
 
-
-
+    bool getstatus() {
+        return active;
+    }
+    void setstatus(bool s) {
+        active = s;
+    }
+    int getsides() {
+        return sides;
+    }
+    void setsides(int s) {
+        sides = s;
+    }
 
 };
 
@@ -386,6 +396,23 @@ public:
         }
     }
 
+    void reset_last_mouse() {
+        BeginTextureMode(target);
+        EndTextureMode();
+    }
+
+    RenderTexture2D gettarget() {
+        return target;
+    }
+
+
+    void draw_polygon(Vector2 center, float radius, int sides, Color c) {
+        BeginTextureMode(target);
+        polygon_tool temp;
+        temp.setsides(sides);
+        temp.draw_polygon(center, radius, c);
+        EndTextureMode();
+    }
 };
 
 class button_management {
@@ -482,13 +509,29 @@ int main() {
     canvas canv(width - 180, height);
     button_management ui;
 
+    int pen_type = brush_pen;
+    bool fill_selected = false;
+    bool polygon_selected = false;
+    int current_tool = 0;
 
     while (!WindowShouldClose()) { //(KEY_ESCAPE pressed or windows close icon clicked)
         Vector2 mouse = GetMousePosition();
         palette.update(mouse);
 
-    
-    
+        for (int i = 0; i < 2; i++) {
+            tool_ptrs[i]->update(mouse);
+        }
+        if (brush_mgr.getselectedpen() == brush_pen) {
+            pen_type = brush_pen;
+        }
+        else {
+            pen_type = pencil_pen;
+        }
+        current_tool = (pen_type == brush_pen) ? 0 : 1;
+        fillmgr.update(mouse, fill_selected);
+        polymgr.update(mouse);
+        polygon_selected = polymgr.getstatus();
+        ui.update(mouse, canv);
     }
 
     canv.unload();
