@@ -1,8 +1,20 @@
+#define _CRT_SECURE_NO_WARNINGS
 #include "raylib.h"
 #include <iostream>
 #include <fstream>
 #include <string>
 using namespace std;
+
+
+void log_action(const string& msg) {
+    ofstream log_file("log.txt", ios::app);
+    if (log_file.is_open()) {
+        time_t now = time(0);
+        char* dt = ctime(&now);
+        log_file << "[" << dt << "] " << msg << endl;
+        log_file.close();
+    }
+}
 
 enum pen_type_enum { brush_pen, pencil_pen, fill_pen, polygon_pen };
 enum brush_size_enum { small = 5, medium = 15, large = 30, xlarge = 45 };
@@ -49,7 +61,7 @@ public:
         if (i == 1) return "m";
         if (i == 2) return "l";
         if (i == 3) return "xl";
-        return;
+        return "?";
     }
 
     virtual ~writingtools() {}
@@ -64,7 +76,7 @@ protected:
 public:
     
     brush_manager() {
-        Rectangle brush_btn = { 950, 80, 70, 25};
+        brushbutton = { 950, 80, 70, 25};
         int s[4] = { small, medium, large, xlarge };
         for (int i = 0; i < 4; i++) {
             brushsizes[i] = s[i];
