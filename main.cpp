@@ -138,6 +138,7 @@ public:
         for (int i = 0; i < 4; i++) {
             if (CheckCollisionPointRec(mouse, sizebutton[i]) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
                 set_size(i);
+                log_action("Brush size selected: " + to_string(get_size()));
             }
         }
     }
@@ -191,6 +192,7 @@ public:
         for (int i = 0; i < 4; i++) {
             if (CheckCollisionPointRec(mouse, sizebtns[i]) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
                 set_size(i);
+                log_action("Pencil size selected: " + to_string(get_size()));
             }
         }
     }
@@ -222,6 +224,7 @@ public :
     void update(Vector2 mouse, bool& fill_selected) {
         if (CheckCollisionPointRec(mouse, fill_btn) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
             fill_selected = true;
+            log_action("Fill tool selected");
         }
     }
     void draw(bool fill_selected) {
@@ -273,6 +276,7 @@ public:
     void update(Vector2 mouse) {
         if (CheckCollisionPointRec(mouse, polybtn) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
             active = true;
+            log_action("Polygon tool selected");
         }
         if (CheckCollisionPointRec(mouse, incbutton) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
             if (sides < 20) sides++;
@@ -409,6 +413,7 @@ public:
             BeginTextureMode(target);
             DrawTexture(LoadTextureFromImage(states[stateindex]), 0, 0, WHITE);
             EndTextureMode();
+            log_action("Undo");
         }
     }
     void redo() {
@@ -417,6 +422,7 @@ public:
             BeginTextureMode(target);
             DrawTexture(LoadTextureFromImage(states[stateindex]), 0, 0, WHITE);
             EndTextureMode();
+            log_action("Redo");
         }
     }
     void unload() { 
