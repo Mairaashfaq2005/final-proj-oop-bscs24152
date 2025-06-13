@@ -16,6 +16,37 @@ void log_action(const string& msg) {
     }
 }
 
+template <typename T>
+void safe_write(const string& filename, T* data, size_t count) {
+    try {
+        ofstream file(filename, ios::binary);
+        if (!file) {
+            throw runtime_error("cannot open file for writing");
+        }
+        file.write(reinterpret_cast<const char*>(data), sizeof(T) * count);
+        file.close();
+    }
+    catch (const exception& e) {
+        log_action(string("Error writing file "));
+    }
+}
+template <typename T>
+void safe_read(const string& filename, T* data, size_t count) {
+    try {
+        ifstream file(filename, ios::binary);
+        if (!file) {
+            throw runtime_error("cannot open file for reading");
+        }
+        file.read(reinterpret_cast<char*>(data), sizeof(T) * count);
+        file.close();
+    }
+    catch (const exception& e) {
+        log_action(string("Error reading file"));
+    }
+}
+
+
+
 enum pen_type_enum { brush_pen, pencil_pen, fill_pen, polygon_pen };
 enum brush_size_enum { small = 5, medium = 15, large = 30, xlarge = 45 };
 
