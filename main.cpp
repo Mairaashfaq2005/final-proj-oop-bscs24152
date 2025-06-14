@@ -85,7 +85,13 @@ public:
     int getselectedpen() {
         return selectedpen;
     }
-
+    void setselectedpenpoly() {
+        selectedpen = polygon_pen;
+    }
+    void setselectedpenfill() {
+        selectedpen = fill_pen;
+    }
+    
     virtual void update(Vector2 mouse) = 0;
     virtual void draw() = 0;
     virtual string size_label(int i) {
@@ -165,7 +171,7 @@ public:
         pencilbutton = { 1030, 220, 70, 25 };
         int s[4] = { small, medium, large, xlarge };
         for (int i = 0; i < 4; i++) {
-            pencilsizes[i] = s[i] - ((i + 1) * 4);;
+            pencilsizes[i] = s[i] - ((i + 1) * 2);
         }
         for (int i = 0; i < 4; i++) {
             sizebtns[i] = { 1030, 280.0f + (i * 30), 30, 25 };
@@ -665,14 +671,23 @@ int main() {
         if (brush_mgr.getselectedpen() == brush_pen) {
             pen_type = brush_pen;
         }
-        else {
+        else if(pencil_mgr.getselectedpen()==pencil_pen){
             pen_type = pencil_pen;
         }
         current_tool = (pen_type == brush_pen) ? 0 : 1;
         fillmgr.update(mouse, fill_selected);
         polymgr.update(mouse);
         polygon_selected = polymgr.getstatus();
-        ui.update(mouse, canv);
+        ui.update(mouse, canv); 
+        pencil_mgr.update(mouse);
+        brush_mgr.update(mouse);
+
+        palette.draw();
+        brush_mgr.draw();
+        pencil_mgr.draw();
+        fillmgr.draw(fill_selected);
+        polymgr.draw();
+        ui.draw();
 
         if (fill_selected || polygon_selected) {
             canv.reset_last_mouse();
@@ -680,6 +695,8 @@ int main() {
 
         if (IsMouseButtonDown(MOUSE_LEFT_BUTTON) && mouse.x < 940 && mouse.y < 690) {
             if (fill_selected) {
+                polygon_selected = false;
+                brush_mgr.setselectedpenfill();
                 canv.push_state();
                 Image img = LoadImageFromTexture(canv.gettarget().texture);
                 Color clicked = GetImageColor(img, (int)mouse.x, (int)mouse.y);
@@ -688,6 +705,8 @@ int main() {
                 fill_selected = false;
             }
             else if (polygon_selected) {
+                fill_selected = false;
+                brush_mgr.setselectedpenpoly();
                 canv.push_state();
                 poly_center = mouse;
                 canv.draw_polygon(poly_center, poly_radius, polymgr.getsides(), palette.get_current_color());
@@ -731,6 +750,12 @@ int main() {
         fillmgr.draw(fill_selected);
         polymgr.draw();
         ui.draw();
+        fillmgr.update(mouse, fill_selected);
+        polymgr.update(mouse);
+        polygon_selected = polymgr.getstatus();
+        ui.update(mouse, canv);
+        pencil_mgr.update(mouse);
+        brush_mgr.update(mouse);
 
         // Status
         DrawText(("size: " + to_string((pen_type == brush_pen) ? brush_mgr.get_size() : pencil_mgr.get_size())).c_str(), 950, 640, 15, DARKGRAY);
