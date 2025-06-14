@@ -108,20 +108,20 @@ protected:
 public:
     
     brush_manager() {
-        brushbutton = { 950, 80, 70, 25};
+        brushbutton = { 1030, 50, 70, 25};
         int s[4] = { small, medium, large, xlarge };
         for (int i = 0; i < 4; i++) {
             brushsizes[i] = s[i];
         }
         for (int i = 0; i < 4; i++) {
-            sizebutton[i] = { 950, 120.0f + (i * 10), 50, 25 };
+            sizebutton[i] = { 1030, 110.0f + (i * 30), 30, 25 };
         }
     }
 
     void draw() override {
         DrawRectangleRec(brushbutton, (selectedpen == brush_pen) ? DARKGRAY : LIGHTGRAY);
         DrawRectangleLinesEx(brushbutton, 1, BLACK);
-        DrawText("brush", brushbutton.x + 1, brushbutton.y + 1, 19, BLACK);
+        DrawText("brush", brushbutton.x + 5, brushbutton.y + 1, 19, BLACK);
         for (int i = 0; i < 4; i++) {
             bool sel = false;
             if (selectedpen == brush_pen && currentindex == i) {
@@ -129,7 +129,7 @@ public:
             }
             DrawRectangleRec(sizebutton[i], sel ? DARKGRAY : LIGHTGRAY);
             DrawRectangleLinesEx(sizebutton[i], 1, BLACK);
-            DrawText(size_label(i).c_str(), sizebutton[i].x + 1, sizebutton[i].y + 1, 19, BLACK);
+            DrawText(size_label(i).c_str(), sizebutton[i].x + 3, sizebutton[i].y + 1, 19, BLACK);
         }
     }
 
@@ -162,20 +162,20 @@ protected:
 public:
 
     pencil_manager() {
-        pencilbutton = { 950, 250, 50, 25 };
+        pencilbutton = { 1030, 220, 70, 25 };
         int s[4] = { small, medium, large, xlarge };
         for (int i = 0; i < 4; i++) {
             pencilsizes[i] = s[i] - ((i + 1) * 4);;
         }
         for (int i = 0; i < 4; i++) {
-            sizebtns[i] = { 950, 300.0f + (i * 10), 50, 25 };
+            sizebtns[i] = { 1030, 280.0f + (i * 30), 30, 25 };
         }
     }
 
     void draw() override {
         DrawRectangleRec(pencilbutton, (selectedpen == pencil_pen) ? DARKGRAY : LIGHTGRAY);
         DrawRectangleLinesEx(pencilbutton, 1, BLACK);
-        DrawText("pencil", pencilbutton.x + 1, pencilbutton.y + 1, 19, BLACK);
+        DrawText("pencil", pencilbutton.x + 5, pencilbutton.y + 1, 19, BLACK);
         for (int i = 0; i < 4; i++) {
             bool sel = false;
             if (selectedpen == pencil_pen && currentindex == i) {
@@ -183,7 +183,7 @@ public:
             }
             DrawRectangleRec(sizebtns[i], sel ? DARKGRAY : LIGHTGRAY);
             DrawRectangleLinesEx(sizebtns[i], 1, BLACK);
-            DrawText(size_label(i).c_str(), sizebtns[i].x + 1, sizebtns[i].y + 1, 19, BLACK);
+            DrawText(size_label(i).c_str(), sizebtns[i].x + 3, sizebtns[i].y + 1, 19, BLACK);
         }
     }
 
@@ -220,7 +220,7 @@ private:
     Rectangle fill_btn;
 public : 
     fill_tool() {
-        fill_btn = { 950, 425, 50, 25 };
+        fill_btn = { 1030, 400, 50, 25 };
     }
     void update(Vector2 mouse, bool& fill_selected) {
         if (CheckCollisionPointRec(mouse, fill_btn) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
@@ -231,7 +231,7 @@ public :
     void draw(bool fill_selected) {
         DrawRectangleRec(fill_btn, fill_selected ? DARKGRAY : LIGHTGRAY);
         DrawRectangleLinesEx(fill_btn, 1, BLACK);
-        DrawText("fill", fill_btn.x + 1, fill_btn.y + 1, 19, BLACK);
+        DrawText("fill", fill_btn.x + 15, fill_btn.y + 1, 19, BLACK);
     }
 
     template<typename T>
@@ -265,7 +265,7 @@ private:
     bool active;
 public:
     polygon_tool() {
-        polybtn = { 950, 470, 70, 20 };
+        polybtn = { 970, 455, 90, 30 };
         incbutton = { 970, 510, 20, 20 };
         decbutton = { 950, 510, 20, 20 };
         sides = 3;
@@ -284,13 +284,13 @@ public:
 
     void draw() {
         DrawRectangleRec(polybtn, active ? DARKGRAY : LIGHTGRAY);
-        DrawRectangleLinesEx(polybtn, 2, BLACK);
-        DrawText("polygon", polybtn.x + 1, polybtn.y + 1, 19, BLACK);
-        DrawRectangleRec(incbutton, BLACK);
-        DrawRectangleRec(decbutton, BLACK);
-        DrawText("+", incbutton.x + 1, incbutton.y, 19, BLACK);
-        DrawText("-", decbutton.x + 1, decbutton.y, 19, BLACK);
-        DrawText(("n = " + to_string(sides)).c_str(), 975, decbutton.y, 19, BLACK);
+        DrawRectangleLinesEx(polybtn, 2, LIGHTGRAY);
+        DrawText("polygon", polybtn.x + 5, polybtn.y + 1, 19, BLACK);
+        DrawRectangleRec(incbutton, LIGHTGRAY);
+        DrawRectangleRec(decbutton, LIGHTGRAY);
+        DrawText("+", incbutton.x + 5, incbutton.y+1, 19, BLACK);
+        DrawText("-", decbutton.x + 5, decbutton.y+1, 19, BLACK);
+        DrawText(("n = " + to_string(sides)).c_str(), 950, decbutton.y+20, 18, BLACK);
 
     }
 
@@ -561,8 +561,8 @@ public :
     int save_counter, load_counter;
  
     button_management() {
-        save_btn = { 950, 560, 45, 22 };
-        load_btn = { 1000, 560, 45, 22 };
+        save_btn = { 970, 560, 45, 22 };
+        load_btn = { 1030, 560, 45, 22 };
         clear_btn = { 950, 590, 45, 22 };
         undo_btn = { 1000, 590, 45, 22 };
         redo_btn = { 1050, 590, 45, 22 };
