@@ -127,7 +127,27 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="brush_manager.cpp" />
+    <ClCompile Include="button_management.cpp" />
+    <ClCompile Include="canvas.cpp" />
+    <ClCompile Include="color_palette.cpp" />
+    <ClCompile Include="fill_tool.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="pencil_manager.cpp" />
+    <ClCompile Include="polygon_tool.cpp" />
+    <ClCompile Include="utils.cpp" />
+    <ClCompile Include="writingtools.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="brush_manager.h" />
+    <ClInclude Include="button_management.h" />
+    <ClInclude Include="canvas.h" />
+    <ClInclude Include="color_palette.h" />
+    <ClInclude Include="fill_tool.h" />
+    <ClInclude Include="pencil_manager.h" />
+    <ClInclude Include="polygon_tool.h" />
+    <ClInclude Include="utils.h" />
+    <ClInclude Include="writingtools.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
