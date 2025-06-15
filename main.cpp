@@ -396,6 +396,7 @@ public:
         ClearBackground(RAYWHITE);
         EndTextureMode();
     }
+
     void push_state() {
         Image img = LoadImageFromTexture(target.texture);
 
@@ -407,10 +408,10 @@ public:
             undocount = -1;  
         }
 
-        if (statecount < maxstates) {
+        if (stateindex < maxstates) {
             stateindex++;
             states[stateindex] = ImageCopy(img);
-            statecount = stateindex + 1;
+            statecount++;
         }
         else {
             UnloadImage(states[0]);
@@ -419,7 +420,6 @@ public:
             }
             states[maxstates - 1] = ImageCopy(img);
         }
-
         UnloadImage(img);
         undocount = -1; 
         log_action("State pushed");
@@ -442,16 +442,20 @@ public:
     void render() {
         DrawTextureRec(target.texture, { 0, 0, (float)target.texture.width, -(float)target.texture.height }, { 0, 0 }, WHITE);
     }
+
     void undo() {
         if (stateindex >= 0) {
             undocount++;
             undostates[undocount] = ImageCopy(states[stateindex]);  
             stateindex--;
+            Image img = ImageCopy(states[stateindex]);
+            ImageFlipVertical(&img);  
+            Texture2D tex = LoadTextureFromImage(img);
             BeginTextureMode(target);
-            Texture2D tex = LoadTextureFromImage(states[stateindex]);
             DrawTexture(tex, 0, 0, WHITE);
             EndTextureMode();
             UnloadTexture(tex);
+            UnloadImage(img);
             log_action("Undo");
         }
     }
@@ -461,17 +465,27 @@ public:
             stateindex++;
             states[stateindex] = ImageCopy(undostates[undocount]); 
             undocount--;
+            if (stateindex >= statecount) {
+                statecount = stateindex + 1;
+            }
+            Image img = ImageCopy(states[stateindex]);
+            ImageFlipVertical(&img);
+            Texture2D tex = LoadTextureFromImage(img);
             BeginTextureMode(target);
-            Texture2D tex = LoadTextureFromImage(states[stateindex]);
             DrawTexture(tex, 0, 0, WHITE);
             EndTextureMode();
             UnloadTexture(tex);
+            UnloadImage(img);
             log_action("Redo");
         }
     }
+
     void unload() {
         for (int i = 0; i < statecount; i++) {
             if (states[i].data) UnloadImage(states[i]);
+        }
+        for (int i = 0; i <+ undocount; i++) {
+            if (undostates[i].data) UnloadImage(undostates[i]);
         }
         UnloadRenderTexture(target);
     }
@@ -671,6 +685,7 @@ int main() {
     Vector2 poly_center = { 0, 0 };
     float poly_radius = 50;
     bool drawing_in_progress = false;
+    canv.push_state();
 
     while (!WindowShouldClose()) { //(KEY_ESCAPE pressed or windows close icon clicked)
         Vector2 mouse = GetMousePosition();
@@ -704,30 +719,24 @@ int main() {
             canv.reset_last_mouse();
         }
 
-        if (IsKeyPressed(KEY_U)) {
-            canv.undo();
-        }
-        if (IsKeyPressed(KEY_R)) {
-            canv.redo();
-        }
-
-        if (ui.hover_undo && IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) {
+        /*if (ui.hover_undo && IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) {
             canv.undo();
         }
         if (ui.hover_redo && IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) {
             canv.redo();
-        }
+        }*/
 
         if (!drawing_in_progress && IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && mouse.x < 940 && mouse.y < 690) {
-            canv.push_state();
             drawing_in_progress = true;
         }
+
         if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) {
+            if (drawing_in_progress) {
+                canv.push_state();  // Save the final result of the stroke
+            }
             drawing_in_progress = false;
             canv.reset_last_mouse();
-            canv.push_state();
         }
-
 
         if (IsMouseButtonDown(MOUSE_LEFT_BUTTON) && mouse.x < 940 && mouse.y < 690) {
             if (fill_selected) {
