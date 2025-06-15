@@ -519,9 +519,13 @@ public:
     void load_image(const string& filename) {
         Image img = LoadImage(filename.c_str());
         if (img.data) {
+            Image img = ImageCopy(states[stateindex]);
+            ImageFlipVertical(&img);
+            Texture2D tex = LoadTextureFromImage(img);
             BeginTextureMode(target);
-            DrawTexture(LoadTextureFromImage(img), 0, 0, WHITE); 
+            DrawTexture(tex, 0, 0, WHITE);
             EndTextureMode();
+            UnloadTexture(tex);
             UnloadImage(img);
             log_action("Image loaded: " + filename);
         }
