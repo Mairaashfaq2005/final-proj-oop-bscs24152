@@ -49,7 +49,9 @@ void safe_read(const string& filename, T* data, size_t count) {
 
 
 enum pen_type_enum { brush_pen, pencil_pen, fill_pen, polygon_pen };
-enum brush_size_enum { small = 5, medium = 15, large = 30, xlarge = 45 };
+enum brush_size_enum { small = 8, medium = 15, large = 25, xlarge = 35 };
+
+int selectedpen = brush_pen;
 
 class brush_manager;
 class pencil_manager;
@@ -61,6 +63,7 @@ protected:
     pencil_manager* pencilmgr;
     int currentindex;
     int selectedpen;
+    int* selectedpen_ptr;
 public: 
     writingtools() {
         currentindex = 1;
@@ -85,11 +88,13 @@ public:
     int getselectedpen() {
         return selectedpen;
     }
-    void setselectedpenpoly() {
-        selectedpen = polygon_pen;
+  
+    void set_selectedpen_ptr(int* ptr) {
+        selectedpen_ptr = ptr;
     }
-    void setselectedpenfill() {
-        selectedpen = fill_pen;
+
+    int getselectedpen() const {
+        return *selectedpen_ptr;
     }
     
     virtual void update(Vector2 mouse) = 0;
@@ -111,6 +116,7 @@ protected:
     Rectangle brushbutton;
     Rectangle sizebutton[4];
     int brushsizes[4];
+    int* selectedpen_ptr;
 public:
     
     brush_manager() {
@@ -125,12 +131,12 @@ public:
     }
 
     void draw() override {
-        DrawRectangleRec(brushbutton, (selectedpen == brush_pen) ? DARKGRAY : LIGHTGRAY);
+        DrawRectangleRec(brushbutton, (*selectedpen_ptr == brush_pen) ? DARKGRAY : LIGHTGRAY);
         DrawRectangleLinesEx(brushbutton, 1, BLACK);
         DrawText("brush", brushbutton.x + 5, brushbutton.y + 1, 19, BLACK);
         for (int i = 0; i < 4; i++) {
             bool sel = false;
-            if (selectedpen == brush_pen && currentindex == i) {
+            if (*selectedpen_ptr == brush_pen && currentindex == i) {
                 sel = true;
             }
             DrawRectangleRec(sizebutton[i], sel ? DARKGRAY : LIGHTGRAY);
@@ -141,7 +147,7 @@ public:
 
     void update(Vector2 mouse) override {
         if (CheckCollisionPointRec(mouse, brushbutton) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
-            selectedpen = brush_pen;
+            *selectedpen_ptr = brush_pen;
         for (int i = 0; i < 4; i++) {
             if (CheckCollisionPointRec(mouse, sizebutton[i]) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
                 set_size(i);
@@ -156,6 +162,9 @@ public:
     void set_size(int idx) {
         if (idx >= 0 && idx < 4) currentindex = idx;
     }
+    void set_selectedpen_ptr(int* ptr) {
+        selectedpen_ptr = ptr;
+    }
 
 };
 
@@ -164,27 +173,29 @@ protected:
     Rectangle pencilbutton;
     Rectangle sizebtns[4];
     int pencilsizes[4];
-
+    int currentindex;
+    int* selectedpen_ptr;
 public:
 
     pencil_manager() {
         pencilbutton = { 1030, 220, 70, 25 };
         int s[4] = { small, medium, large, xlarge };
-        for (int i = 0; i < 4; i++) {
-            pencilsizes[i] = s[i] - ((i + 1) * 2);
+        for (int i = 0; i < 5; i++) {
+            pencilsizes[i] = i+3;
         }
         for (int i = 0; i < 4; i++) {
             sizebtns[i] = { 1030, 280.0f + (i * 30), 30, 25 };
         }
+        currentindex = 0;
     }
 
     void draw() override {
-        DrawRectangleRec(pencilbutton, (selectedpen == pencil_pen) ? DARKGRAY : LIGHTGRAY);
+        DrawRectangleRec(pencilbutton, (*selectedpen_ptr == pencil_pen) ? DARKGRAY : LIGHTGRAY);
         DrawRectangleLinesEx(pencilbutton, 1, BLACK);
         DrawText("pencil", pencilbutton.x + 5, pencilbutton.y + 1, 19, BLACK);
         for (int i = 0; i < 4; i++) {
             bool sel = false;
-            if (selectedpen == pencil_pen && currentindex == i) {
+            if (*selectedpen_ptr == pencil_pen && currentindex == i) {
                 sel = true;
             }
             DrawRectangleRec(sizebtns[i], sel ? DARKGRAY : LIGHTGRAY);
@@ -194,22 +205,31 @@ public:
     }
 
     void update(Vector2 mouse) override {
-        if (CheckCollisionPointRec(mouse, pencilbutton) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
-            selectedpen = pencil_pen;
+        if (CheckCollisionPointRec(mouse, pencilbutton) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+            *selectedpen_ptr = pencil_pen;
+        }
         for (int i = 0; i < 4; i++) {
             if (CheckCollisionPointRec(mouse, sizebtns[i]) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
                 set_size(i);
                 log_action("Pencil size selected: " + to_string(get_size()));
             }
         }
+
     }
 
     int get_size() {
         return pencilsizes[currentindex];
     }
+
     void set_size(int idx) {
-        if (idx >= 0 && idx < 4) currentindex = idx;
+        if (idx >= 0 && idx < 4) {
+            currentindex = idx;
+        }
     }
+    void set_selectedpen_ptr(int* ptr) {
+        selectedpen_ptr = ptr;
+    }
+
 };
 
 class fill_tool {
@@ -434,7 +454,7 @@ public:
         }
         else if (pen_type == pencil_pen) {
             if (last_mouse.x >= 0 && last_mouse.y >= 0)
-                DrawLineEx(last_mouse, pos, 1, c);
+                DrawCircleV(pos, radius, c);
         }
         EndTextureMode();
         last_mouse = pos;
@@ -670,6 +690,9 @@ int main() {
     brush_mgr.setmanagers(&brush_mgr, &pencil_mgr);
     pencil_mgr.setmanagers(&brush_mgr, &pencil_mgr);
     writingtools* tool_ptrs[2] = { &brush_mgr, &pencil_mgr };
+    brush_mgr.set_selectedpen_ptr(&selectedpen);
+    pencil_mgr.set_selectedpen_ptr(&selectedpen);
+
 
     fill_tool fillmgr;
     polygon_tool polymgr;
@@ -677,7 +700,7 @@ int main() {
     canvas canv(width - 180, height);
     button_management ui;
 
-    int pen_type = brush_pen;
+    int pen_type;
     bool fill_selected = false;
     bool polygon_selected = false;
     int current_tool = 0;
@@ -694,12 +717,8 @@ int main() {
         for (int i = 0; i < 2; i++) {
             tool_ptrs[i]->update(mouse);
         }
-        if (brush_mgr.getselectedpen() == brush_pen) {
-            pen_type = brush_pen;
-        }
-        else if (pencil_mgr.getselectedpen() == pencil_pen) {
-            pen_type = pencil_pen;
-        }
+        pen_type = selectedpen;
+
         current_tool = (pen_type == brush_pen) ? 0 : 1;
         fillmgr.update(mouse, fill_selected);
         polymgr.update(mouse);
@@ -741,7 +760,7 @@ int main() {
         if (IsMouseButtonDown(MOUSE_LEFT_BUTTON) && mouse.x < 940 && mouse.y < 690) {
             if (fill_selected) {
                 polygon_selected = false;
-                brush_mgr.setselectedpenfill();
+                selectedpen = fill_pen;
                 Image img = LoadImageFromTexture(canv.gettarget().texture);
                 Color clicked = GetImageColor(img, (int)mouse.x, (int)mouse.y);
                 canv.fill(mouse, canv.gettarget(), palette.get_current_color());
@@ -750,14 +769,14 @@ int main() {
             }
             else if (polygon_selected) {
                 fill_selected = false;
-                brush_mgr.setselectedpenpoly();
+                selectedpen = polygon_pen;
                 poly_center = mouse;
                 canv.draw_polygon(poly_center, poly_radius, polymgr.getsides(), palette.get_current_color());
                 polymgr.setstatus(false);
             }
             else {
                 Color draw_color = palette.get_current_color();
-                float size;
+                float size = 1.0f;
                 if (pen_type == brush_pen) {
                     size = brush_mgr.get_size();
                 }
@@ -775,7 +794,7 @@ int main() {
 
         // Preview
         if (mouse.x < 940 && mouse.y < 690) {
-            float preview_size = (pen_type == brush_pen) ? brush_mgr.get_size() : pencil_mgr.get_size();
+            int preview_size = (pen_type == brush_pen) ? brush_mgr.get_size() : pencil_mgr.get_size();
             if (polygon_selected)
                 polymgr.draw_polygon(mouse, poly_radius, palette.get_current_color());
             else if (pen_type == pencil_pen)
