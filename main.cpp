@@ -204,15 +204,6 @@ public:
         }
     }
 
-    //string size_label(int i) {
-    //    if (i == 0) return "s";
-    //    if (i == 1) return "m";
-    //    if (i == 2) return "l";
-    //    if (i == 3) return "xl";
-    //    return;
-    //}
-
-
     int get_size() {
         return pencilsizes[currentindex];
     }
@@ -382,6 +373,8 @@ private:
     // Undo/redo stacks
     static const int maxstates = 100;
     Image states[maxstates];
+    Image undostates[maxstates];  
+    int undocount;
     int stateindex;
     int statecount;
     int width, height;
@@ -389,12 +382,13 @@ public:
     canvas(int w, int h) {
         width = w;
         height = h;
-        target = LoadRenderTexture(width, height); //raylib funtion
-        BeginTextureMode(target); //raylib function to begin drawing
+        target = LoadRenderTexture(width, height); 
+        BeginTextureMode(target); 
         ClearBackground(RAYWHITE);
         EndTextureMode();
-        stateindex = 0;
+        stateindex = -1;
         statecount = 0;
+        undocount = -1;
     }
 
     void clear() {
@@ -402,27 +396,38 @@ public:
         ClearBackground(RAYWHITE);
         EndTextureMode();
     }
-
     void push_state() {
-        if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
-            Image img = LoadImageFromTexture(target.texture);
-            if (statecount < maxstates) {
-                states[statecount++] = ImageCopy(img);
-                stateindex = statecount - 1;
+        Image img = LoadImageFromTexture(target.texture);
+
+        if (stateindex < statecount - 1) {
+            for (int i = stateindex + 1; i < statecount; i++) {
+                if (states[i].data) UnloadImage(states[i]);
             }
-            else {
-                for (int i = 1; i < maxstates; i++) states[i - 1] = states[i];
-                states[maxstates - 1] = ImageCopy(img);
-                stateindex = maxstates - 1;
-            }
-            UnloadImage(img);
-            log_action("State pushed");
+            statecount = stateindex + 1;
+            undocount = -1;  
         }
+
+        if (statecount < maxstates) {
+            stateindex++;
+            states[stateindex] = ImageCopy(img);
+            statecount = stateindex + 1;
+        }
+        else {
+            UnloadImage(states[0]);
+            for (int i = 1; i < maxstates; i++) {
+                states[i - 1] = states[i];
+            }
+            states[maxstates - 1] = ImageCopy(img);
+        }
+
+        UnloadImage(img);
+        undocount = -1; 
+        log_action("State pushed");
     }
 
     void draw_at(Vector2 pos, float radius, Color c, int pen_type) {
         static Vector2 last_mouse = { -1, -1 };
-        if (pos.x > 940 || pos.y < 20) return; // block drawing over toolbar
+        if (pos.x > 940 || pos.y < 20) return;
         BeginTextureMode(target);
         if (pen_type == brush_pen) {
             DrawCircleV(pos, radius, c);
@@ -438,24 +443,32 @@ public:
         DrawTextureRec(target.texture, { 0, 0, (float)target.texture.width, -(float)target.texture.height }, { 0, 0 }, WHITE);
     }
     void undo() {
-        if (stateindex > 0) {
+        if (stateindex >= 0) {
+            undocount++;
+            undostates[undocount] = ImageCopy(states[stateindex]);  
             stateindex--;
             BeginTextureMode(target);
-            DrawTexture(LoadTextureFromImage(states[stateindex]), 0, 0, WHITE);
+            Texture2D tex = LoadTextureFromImage(states[stateindex]);
+            DrawTexture(tex, 0, 0, WHITE);
             EndTextureMode();
-            log_action("Undo"); 
-        }
-    }
-    void redo() {
-        if (stateindex < statecount - 1) {
-            stateindex++;
-            BeginTextureMode(target);
-            DrawTexture(LoadTextureFromImage(states[stateindex]), 0, 0, WHITE);
-            EndTextureMode();
-            log_action("Redo"); 
+            UnloadTexture(tex);
+            log_action("Undo");
         }
     }
 
+    void redo() {
+        if (undocount >= 0 && stateindex < maxstates - 1) {
+            stateindex++;
+            states[stateindex] = ImageCopy(undostates[undocount]); 
+            undocount--;
+            BeginTextureMode(target);
+            Texture2D tex = LoadTextureFromImage(states[stateindex]);
+            DrawTexture(tex, 0, 0, WHITE);
+            EndTextureMode();
+            UnloadTexture(tex);
+            log_action("Redo");
+        }
+    }
     void unload() {
         for (int i = 0; i < statecount; i++) {
             if (states[i].data) UnloadImage(states[i]);
@@ -634,9 +647,6 @@ public :
 
 
 
-
-
-
 int main() {
     int width = 1100, height = 700;
     InitWindow(width, height, "bscs24152 oop project");
@@ -660,6 +670,7 @@ int main() {
 
     Vector2 poly_center = { 0, 0 };
     float poly_radius = 50;
+    bool drawing_in_progress = false;
 
     while (!WindowShouldClose()) { //(KEY_ESCAPE pressed or windows close icon clicked)
         Vector2 mouse = GetMousePosition();
@@ -671,14 +682,14 @@ int main() {
         if (brush_mgr.getselectedpen() == brush_pen) {
             pen_type = brush_pen;
         }
-        else if(pencil_mgr.getselectedpen()==pencil_pen){
+        else if (pencil_mgr.getselectedpen() == pencil_pen) {
             pen_type = pencil_pen;
         }
         current_tool = (pen_type == brush_pen) ? 0 : 1;
         fillmgr.update(mouse, fill_selected);
         polymgr.update(mouse);
         polygon_selected = polymgr.getstatus();
-        ui.update(mouse, canv); 
+        ui.update(mouse, canv);
         pencil_mgr.update(mouse);
         brush_mgr.update(mouse);
 
@@ -693,11 +704,35 @@ int main() {
             canv.reset_last_mouse();
         }
 
+        if (IsKeyPressed(KEY_U)) {
+            canv.undo();
+        }
+        if (IsKeyPressed(KEY_R)) {
+            canv.redo();
+        }
+
+        if (ui.hover_undo && IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) {
+            canv.undo();
+        }
+        if (ui.hover_redo && IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) {
+            canv.redo();
+        }
+
+        if (!drawing_in_progress && IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && mouse.x < 940 && mouse.y < 690) {
+            canv.push_state();
+            drawing_in_progress = true;
+        }
+        if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) {
+            drawing_in_progress = false;
+            canv.reset_last_mouse();
+            canv.push_state();
+        }
+
+
         if (IsMouseButtonDown(MOUSE_LEFT_BUTTON) && mouse.x < 940 && mouse.y < 690) {
             if (fill_selected) {
                 polygon_selected = false;
                 brush_mgr.setselectedpenfill();
-                canv.push_state();
                 Image img = LoadImageFromTexture(canv.gettarget().texture);
                 Color clicked = GetImageColor(img, (int)mouse.x, (int)mouse.y);
                 canv.fill(mouse, canv.gettarget(), palette.get_current_color());
@@ -707,13 +742,11 @@ int main() {
             else if (polygon_selected) {
                 fill_selected = false;
                 brush_mgr.setselectedpenpoly();
-                canv.push_state();
                 poly_center = mouse;
                 canv.draw_polygon(poly_center, poly_radius, polymgr.getsides(), palette.get_current_color());
                 polymgr.setstatus(false);
             }
             else {
-                canv.push_state();
                 Color draw_color = palette.get_current_color();
                 float size;
                 if (pen_type == brush_pen) {
@@ -725,7 +758,6 @@ int main() {
                 canv.draw_at(mouse, size, draw_color, pen_type);
             }
         }
-        if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) canv.reset_last_mouse();
 
         BeginDrawing();
         ClearBackground(RAYWHITE);
@@ -738,9 +770,10 @@ int main() {
             if (polygon_selected)
                 polymgr.draw_polygon(mouse, poly_radius, palette.get_current_color());
             else if (pen_type == pencil_pen)
-                DrawCircle(mouse.x, mouse.y, 2, Fade(palette.get_current_color(), 0.5f));
-            else
+                DrawCircle(mouse.x, mouse.y, preview_size, Fade(palette.get_current_color(), 0.5f));
+            else if (pen_type == brush_pen) {
                 DrawCircleV(mouse, preview_size, Fade(palette.get_current_color(), 0.5f));
+            }
         }
         // Draw toolbar
         DrawRectangle(940, 0, 160, height, Fade(LIGHTGRAY, 0.2f));
@@ -750,12 +783,6 @@ int main() {
         fillmgr.draw(fill_selected);
         polymgr.draw();
         ui.draw();
-        fillmgr.update(mouse, fill_selected);
-        polymgr.update(mouse);
-        polygon_selected = polymgr.getstatus();
-        ui.update(mouse, canv);
-        pencil_mgr.update(mouse);
-        brush_mgr.update(mouse);
 
         // Status
         DrawText(("size: " + to_string((pen_type == brush_pen) ? brush_mgr.get_size() : pencil_mgr.get_size())).c_str(), 950, 640, 15, DARKGRAY);
@@ -765,7 +792,6 @@ int main() {
         DrawText("Shortcuts: S-save | L-load | C-clear | U-undo | R-redo", 10, 670, 15, BLACK);
 
         EndDrawing();
-
     }
     canv.unload();
     CloseWindow();
